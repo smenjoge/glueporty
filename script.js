@@ -16,8 +16,13 @@ $(document).ready(function() {
 
     function loadDaySlots () {
         var curentHour = moment().hour();
-        daySchedule = JSON.parse(localStorage.getItem("daySchedule"));
+        var dayScheduleStorage = JSON.parse(localStorage.getItem("daySchedule"));
         
+        if (!dayScheduleStorage) {
+            dayScheduleStorage = daySchedule;
+        }
+
+
         for(i=9; i < 18; i++) {
             if (firstIternation) {
                 var newTimeBlock = $(".time-block:last");
@@ -26,27 +31,36 @@ $(document).ready(function() {
             else {
                 var newTimeBlock = $(".time-block:last").clone();
             }
+
+            var hourEl = newTimeBlock.find(".hour");
+            hourEl.attr({id: "timeSlot"+i, value: i});
+            hourEl.text(moment(i, "h").format("hh:mm A"));
             
-            newTimeBlock.find(".hour").attr({id: "timeSlot"+i, value: i});
-            newTimeBlock.find(".hour").text(moment(i, "h").format("hh:mm A"));
-            
+            var textAreaEl = newTimeBlock.find("textarea");
+            textAreaEl.attr("disabled", false);
+
+            var buttonEl = newTimeBlock.find(".saveBtn");
+            buttonEl.attr("disabled", false);
+
             if (curentHour === i) {
-                newTimeBlock.find("textarea").addClass("present");
+                textAreaEl.addClass("present");
             } 
             
             else if (curentHour < i) {
-                newTimeBlock.find("textarea").addClass("future");
+                textAreaEl.addClass("future");
             }
 
             else if (curentHour > i) {
-                newTimeBlock.find("textarea").addClass("past");
+                textAreaEl.attr("disabled", true);
+                buttonEl.attr("disabled", true);
+                textAreaEl.addClass("past");
             }
             // find and populate text
-            newTimeBlock.find("textarea").empty();
-            if (daySchedule.dateObj == currentDate) {
-                findTimeSlot = daySchedule.scheduleArr.find(({timeObj} ) => timeObj == i);
+            textAreaEl.empty();
+            if (dayScheduleStorage.dateObj == currentDate) {
+                findTimeSlot = dayScheduleStorage.scheduleArr.find(({timeObj} ) => timeObj == i);
                 if (findTimeSlot)  {
-                    newTimeBlock.find("textarea").text(findTimeSlot.eventObj);
+                    textAreaEl.text(findTimeSlot.eventObj);
                 }
             }
 
@@ -57,6 +71,11 @@ $(document).ready(function() {
     function saveEvent () {
         var dayScheduleStorage = JSON.parse(localStorage.getItem("daySchedule"));
         
+        if (!dayScheduleStorage) {
+            daySchedule.dateObj = currentDate;
+            dayScheduleStorage = daySchedule;
+        }
+
         var parentElModify = $(this).parents(".time-block");
         var hourModify = parentElModify.find(".hour").attr("value");
         var toDoModify = parentElModify.find(".toDoClass").val();
@@ -75,8 +94,6 @@ $(document).ready(function() {
         } else {
             dayScheduleStorage.scheduleArr.push(newtimeEventObj);
         }
-
-        // dayScheduleStorage.dateObj = currentDate;
         
         localStorage.setItem("daySchedule", JSON.stringify(dayScheduleStorage));
 
